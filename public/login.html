@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wasabi 追跡 - Login</title>
+    <link rel="stylesheet" href="auth.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>Wasabi<span class="jp">追跡</span></h1>
+                <p>Login untuk melanjutkan</p>
+            </div>
+            <form id="loginForm">
+                <input type="email" id="loginEmail" placeholder="Email" required>
+                <input type="password" id="loginPassword" placeholder="Password" required>
+                <button type="submit">Masuk</button>
+            </form>
+            <p class="toggle">Belum punya akun? <a href="#" onclick="toggleForm()">Daftar</a></p>
+        </div>
+
+        <div class="auth-card hidden" id="registerCard">
+            <div class="auth-header">
+                <h1>Wasabi<span class="jp">追跡</span></h1>
+                <p>Daftar akun baru</p>
+            </div>
+            <form id="registerForm">
+                <input type="text" id="regName" placeholder="Nama Lengkap" required>
+                <input type="text" id="regCity" placeholder="Kota Asal" required>
+                <input type="email" id="regEmail" placeholder="Email" required>
+                <input type="password" id="regPassword" placeholder="Password" required>
+                <button type="submit">Daftar</button>
+            </form>
+            <p class="toggle">Sudah punya akun? <a href="#" onclick="toggleForm()">Login</a></p>
+        </div>
+    </div>
+    <script src="auth.js"></script>
+</body>
+</html>

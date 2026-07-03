@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Wasabi 追跡</title>
-    
     <meta name="description" content="Wasabi 追跡 - Phone & Email Intelligence Tracker">
     <meta name="theme-color" content="#0a0a0a">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,10 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="Wasabi 追跡">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <link rel="manifest" href="/manifest.json">
-    
     <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -23,9 +19,9 @@
         <div class="splash-content">
             <div class="splash-logo-container">
                 <div class="slash-line left-slash"></div>
-                <img src="/icon-512.png" alt="Wasabi" class="splash-logo" id="splashLogo">
+                <img src="/icon-512.png" alt="Wasabi" class="splash-logo">
                 <div class="slash-line right-slash"></div>
-                <div class="katana-slice" id="katanaSlice"></div>
+                <div class="katana-slice"></div>
             </div>
             <h1 class="splash-title">Wasabi<span class="splash-jp">追跡</span></h1>
             <p class="splash-sub">Phone & Email Intelligence</p>
@@ -36,6 +32,13 @@
     <div class="bg-grid"></div>
     <div class="container" id="mainApp" style="display:none;">
         <header>
+            <div class="top-bar">
+                <div class="user-info">
+                    <span id="userName"></span> - <span id="userCity"></span>
+                </div>
+                <div id="ipInfo" class="ip-info">Loading IP...</div>
+                <button class="logout-btn" onclick="logout()">Keluar</button>
+            </div>
             <div class="logo">
                 <span class="logo-icon">W</span>
                 <div class="logo-text">
@@ -57,13 +60,25 @@
         </div>
 
         <div id="progress" class="progress hidden">
-            <div class="progress-bar">
-                <div class="progress-fill"></div>
-            </div>
+            <div class="progress-bar"><div class="progress-fill"></div></div>
             <p class="progress-text">Menganalisis input...</p>
         </div>
 
         <div id="result" class="result hidden"></div>
+
+        <div id="reportForm" class="report-form hidden">
+            <h3>Laporkan Nomor Ini</h3>
+            <input type="text" id="reportName" placeholder="Nama pemilik">
+            <input type="text" id="reportLabels" placeholder="Label (contoh: Penipu, Phising)">
+            <input type="text" id="reportLocation" placeholder="Lokasi (contoh: Jakarta Pusat)">
+            <input type="text" id="reportNotes" placeholder="Catatan">
+            <select id="reportRisk">
+                <option value="RENDAH">Rendah</option>
+                <option value="SEDANG">Sedang</option>
+                <option value="TINGGI" selected>Tinggi</option>
+            </select>
+            <button onclick="submitReport()">Kirim Laporan</button>
+        </div>
 
         <div id="history" class="history hidden">
             <h2>Pelacakan Terbaru</h2>
@@ -71,7 +86,7 @@
         </div>
 
         <footer>
-            <p>Powered by NumVerify | Abstract API | Veriphone | Supabase</p>
+            <p>Powered by NumVerify | Abstract API | Veriphone | Ipstack | Supabase</p>
         </footer>
     </div>
     <script src="script.js"></script>

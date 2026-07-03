@@ -82,9 +82,24 @@ function displayResult(data) {
 
     if (data.type === "phone") {
         html += `<div class="result-row"><span class="result-label">Format</span><span class="result-value">${data.phone_formatted}</span></div>`;
-        html += `<div class="result-row"><span class="result-label">Operator</span><span class="result-value highlight">${data.merged?.operator || data.prefix?.operator || '-'}</span></div>`;
-        html += `<div class="result-row"><span class="result-label">Wilayah</span><span class="result-value">${data.merged?.region || data.prefix?.wilayah || '-'}</span></div>`;
-        html += `<div class="result-row"><span class="result-label">Tipe Jalur</span><span class="result-value">${data.merged?.line_type || data.prefix?.jenis || '-'}</span></div>`;
+        html += `<div class="result-row"><span class="result-label">Operator</span><span class="result-value highlight">${data.merged?.operator || '-'}</span></div>`;
+        
+        if (data.merged?.city) {
+            html += `<div class="result-row"><span class="result-label">Kota</span><span class="result-value highlight">${data.merged.city}</span></div>`;
+        }
+        
+        html += `<div class="result-row"><span class="result-label">Wilayah</span><span class="result-value">${data.merged?.region || '-'}</span></div>`;
+        html += `<div class="result-row"><span class="result-label">Negara</span><span class="result-value">${data.merged?.country || '-'}</span></div>`;
+        html += `<div class="result-row"><span class="result-label">Timezone</span><span class="result-value">${data.merged?.timezone || '-'}</span></div>`;
+        html += `<div class="result-row"><span class="result-label">Tipe Jalur</span><span class="result-value">${data.merged?.line_type || '-'}</span></div>`;
+        
+        if (data.merged?.risk_level) {
+            html += `<div class="result-row"><span class="result-label">Risk Level</span><span class="result-value highlight">${data.merged.risk_level.toUpperCase()}</span></div>`;
+        }
+        
+        if (data.merged?.is_abuse_detected) {
+            html += `<div class="result-row"><span class="result-label">Abuse Detected</span><span class="result-value highlight">YA</span></div>`;
+        }
 
         html += '<div class="result-section"><h3>Status API</h3><div class="api-grid">';
         html += apiCard("NumVerify", data.apis?.numverify);

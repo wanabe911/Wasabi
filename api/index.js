@@ -22,7 +22,11 @@ async function lookupNumVerify(phone) {
     const res = await fetch(`http://apilayer.net/api/validate?access_key=${NUMVERIFY_KEY}&number=${phone}&country_code=ID`);
     const data = await res.json();
     if (data.valid) {
-      return { operator: data.carrier, region: data.location, line_type: data.line_type };
+      return { 
+        operator: data.carrier, 
+        region: data.location, 
+        line_type: data.line_type 
+      };
     }
     return null;
   } catch { return null; }
@@ -33,10 +37,26 @@ async function lookupAbstract(phone) {
     const res = await fetch(`https://phoneintelligence.abstractapi.com/v1/?api_key=${ABSTRACT_KEY}&phone=${phone}`);
     const data = await res.json();
     if (data.phone_validation?.is_valid) {
+      const loc = data.phone_location || {};
+      const car = data.phone_carrier || {};
+      const risk = data.phone_risk || {};
+      const reg = data.phone_registration || {};
+      
+      const region = loc.region || loc.city || loc.country_name || null;
+      const timezone = loc.timezone || null;
+      
       return {
-        operator: data.phone_carrier?.name,
-        region: data.phone_location?.city || data.phone_location?.country_name,
-        line_type: data.phone_carrier?.line_type
+        operator: car.name,
+        region: region,
+        city: loc.city !== loc.country_name ? loc.city : null,
+        country: loc.country_name,
+        timezone: timezone,
+        line_type: car.line_type,
+        risk_level: risk.risk_level,
+        is_disposable: risk.is_disposable,
+        is_abuse_detected: risk.is_abuse_detected,
+        registered_name: reg.name,
+        registered_type: reg.type
       };
     }
     return null;
@@ -100,10 +120,17 @@ app.post("/api/track", async (req, res) => {
     ]);
 
     result.apis = { numverify, abstract, veriphone };
+    
     result.merged = {
       operator: numverify?.operator || abstract?.operator || veriphone?.operator || prefixData.operator,
-      region: numverify?.region || abstract?.region || veriphone?.region || prefixData.wilayah,
-      line_type: numverify?.line_type || abstract?.line_type || veriphone?.line_type || prefixData.jenis
+      region: abstract?.region || numverify?.region || veriphone?.region || prefixData.wilayah,
+      city: abstract?.city || null,
+      country: abstract?.country || null,
+      timezone: abstract?.timezone || null,
+      line_type: numverify?.line_type || abstract?.line_type || veriphone?.line_type || prefixData.jenis,
+      risk_level: abstract?.risk_level || null,
+      is_disposable: abstract?.is_disposable || false,
+      is_abuse_detected: abstract?.is_abuse_detected || false
     };
   }
 

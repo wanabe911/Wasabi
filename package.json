@@ -1,0 +1,14 @@
+{
+  "name": "wasabi-tsuiseki",
+  "version": "1.0.0",
+  "description": "Wasabi 追跡 - Phone & Email Intelligence Tracker",
+  "type": "module",
+  "scripts": {
+    "start": "node api/index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.39.0",
+    "express": "latest",
+    "cors": "latest"
+  }
+}

@@ -34,16 +34,36 @@
         <header>
             <div class="top-bar">
                 <div class="user-info">
+                    <span class="user-dot"></span>
                     <span id="userName"></span> - <span id="userCity"></span>
                 </div>
-                <div id="ipInfo" class="ip-info">Loading IP...</div>
-                <button class="logout-btn" onclick="logout()">Keluar</button>
+                <div class="top-right">
+                    <div id="ipInfo" class="ip-info">Loading IP...</div>
+                    <button class="install-btn hidden" id="installBtn" onclick="installApp()">Install App</button>
+                    <button class="logout-btn" onclick="logout()">Keluar</button>
+                </div>
             </div>
             <div class="logo">
                 <span class="logo-icon">W</span>
                 <div class="logo-text">
                     <h1>Wasabi<span class="jp">追跡</span></h1>
                     <p>Phone & Email Intelligence</p>
+                </div>
+            </div>
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-number" id="statTotal">0</span>
+                    <span class="stat-label">Total Data</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-number" id="statHighRisk">0</span>
+                    <span class="stat-label">Resiko Tinggi</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-number" id="statToday">0</span>
+                    <span class="stat-label">Hari Ini</span>
                 </div>
             </div>
         </header>
@@ -67,7 +87,10 @@
         <div id="result" class="result hidden"></div>
 
         <div id="reportForm" class="report-form hidden">
-            <h3>Laporkan Nomor Ini</h3>
+            <div class="report-header">
+                <h3>Laporkan Nomor Ini</h3>
+                <button class="close-btn" onclick="document.getElementById('reportForm').classList.add('hidden')">&times;</button>
+            </div>
             <input type="text" id="reportName" placeholder="Nama pemilik">
             <input type="text" id="reportLabels" placeholder="Label (contoh: Penipu, Phising)">
             <input type="text" id="reportLocation" placeholder="Lokasi (contoh: Jakarta Pusat)">
@@ -81,13 +104,12 @@
         </div>
 
         <div id="history" class="history hidden">
-            <h2>Pelacakan Terbaru</h2>
+            <div class="history-header">
+                <h2>Pelacakan Terbaru</h2>
+                <button class="export-btn" onclick="exportCSV()">Export CSV</button>
+            </div>
             <div id="historyList"></div>
         </div>
-
-        <footer>
-            <p>Powered by NumVerify | Abstract API | Veriphone | Ipstack | Supabase</p>
-        </footer>
     </div>
     <script src="script.js"></script>
 </body>

@@ -1,10 +1,29 @@
 const user = JSON.parse(localStorage.getItem("wasabi_user"));
 if (!user) { window.location.href = "/login.html"; }
 
+let deferredPrompt;
+window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById("installBtn").classList.remove("hidden");
+});
+
+function installApp() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+            document.getElementById("installBtn").classList.add("hidden");
+            deferredPrompt = null;
+        });
+    }
+}
+
 window.addEventListener("load", () => {
     document.getElementById("userName").textContent = user.name;
     document.getElementById("userCity").textContent = user.city;
     loadIP();
+    loadStats();
+    loadHistory();
     setTimeout(() => {
         document.getElementById("mainApp").style.display = "block";
         document.getElementById("splash").style.display = "none";
@@ -22,13 +41,29 @@ async function loadIP() {
         const json = await res.json();
         if (json.success && json.data) {
             const d = json.data;
-            document.getElementById("ipInfo").textContent = `${d.city || ''}, ${d.region || ''}, ${d.country || ''}`;
+            document.getElementById("ipInfo").textContent = [d.city, d.region, d.country].filter(Boolean).join(", ") || d.ip;
+        }
+    } catch {}
+}
+
+async function loadStats() {
+    try {
+        const res = await fetch("/api/recent");
+        const json = await res.json();
+        if (json.success && json.data) {
+            document.getElementById("statTotal").textContent = json.data.length || 0;
+            const highRisk = json.data.filter(d => d.risk_level === "TINGGI").length;
+            document.getElementById("statHighRisk").textContent = highRisk;
+            const today = json.data.filter(d => {
+                const dDate = new Date(d.updated_at).toDateString();
+                return dDate === new Date().toDateString();
+            }).length;
+            document.getElementById("statToday").textContent = today;
         }
     } catch {}
 }
 
 let currentPhone = "";
-
 const searchInput = document.getElementById("searchInput");
 const progress = document.getElementById("progress");
 const progressText = document.querySelector(".progress-text");
@@ -36,6 +71,7 @@ const result = document.getElementById("result");
 const reportForm = document.getElementById("reportForm");
 const history = document.getElementById("history");
 const historyList = document.getElementById("historyList");
+const searchBtn = document.getElementById("searchBtn");
 const STEPS = ["Menganalisis format input...", "Mencocokkan prefix database...", "Menghubungi NumVerify API...", "Menghubungi Abstract API...", "Menghubungi Veriphone API...", "Memeriksa database laporan...", "Menyusun hasil analisis..."];
 
 async function startTracking() {
@@ -52,7 +88,7 @@ async function startTracking() {
         if (json.success) { displayResult(json.data); } else { displayError(json.error); }
     } catch (err) { clearInterval(si); displayError("Error: " + err.message); }
     progress.classList.add("hidden"); searchBtn.disabled = false;
-    progressText.textContent = "Menganalisis input..."; loadHistory();
+    progressText.textContent = "Menganalisis input..."; loadHistory(); loadStats();
 }
 
 function displayResult(data) {
@@ -90,6 +126,11 @@ function displayResult(data) {
         html += '</div>';
     }
 
+    html += '<button class="copy-btn" onclick="copyResult()">Copy Hasil</button>';
+    html += '</div>';
+    result.innerHTML = html;
+    result.classList.remove("hidden");
+
     if (data.type === "phone") {
         document.getElementById("reportName").value = data.tracked?.name || "";
         document.getElementById("reportLabels").value = data.tracked?.labels?.join(", ") || "";
@@ -98,10 +139,6 @@ function displayResult(data) {
         document.getElementById("reportRisk").value = data.tracked?.risk_level || "TINGGI";
         reportForm.classList.remove("hidden");
     }
-
-    html += '</div>';
-    result.innerHTML = html;
-    result.classList.remove("hidden");
 }
 
 function apiCard(name, apiData) {
@@ -112,6 +149,18 @@ function apiCard(name, apiData) {
 function displayError(msg) {
     result.innerHTML = `<div class="result-header"><h2>Error</h2></div><div class="result-body"><p style="color:#c0392b;">${escapeHtml(msg)}</p></div>`;
     result.classList.remove("hidden");
+}
+
+async function copyResult() {
+    const text = Array.from(result.querySelectorAll(".result-row"))
+        .map(r => r.querySelector(".result-label").textContent + ": " + r.querySelector(".result-value").textContent)
+        .join("\n");
+    try {
+        await navigator.clipboard.writeText(text);
+        alert("Hasil disalin!");
+    } catch {
+        alert("Gagal menyalin");
+    }
 }
 
 async function submitReport() {
@@ -129,7 +178,8 @@ async function submitReport() {
         })
     });
     const data = await res.json();
-    if (data.success) { alert("Laporan berhasil dikirim!"); } else { alert("Gagal mengirim laporan"); }
+    if (data.success) { alert("Laporan berhasil!"); reportForm.classList.add("hidden"); loadHistory(); loadStats(); }
+    else { alert("Gagal mengirim laporan"); }
 }
 
 async function loadHistory() {
@@ -148,6 +198,20 @@ async function loadHistory() {
     } catch {}
 }
 
+function exportCSV() {
+    fetch("/api/recent").then(r => r.json()).then(json => {
+        if (!json.success || !json.data?.length) return alert("Tidak ada data");
+        let csv = "Phone,Email,Nama,Label,Lokasi,Laporan,Risk Level,Catatan\n";
+        json.data.forEach(d => {
+            csv += `${d.phone || ""},${d.email || ""},"${d.name || ""}","${(d.labels || []).join("; ")}","${d.location || ""}",${d.reports || 0},${d.risk_level || ""},"${d.notes || ""}"\n`;
+        });
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = `wasabi-export-${new Date().toISOString().slice(0,10)}.csv`;
+        a.click(); URL.revokeObjectURL(url);
+    });
+}
+
 function escapeHtml(str) { if (!str) return ""; return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 searchInput.addEventListener("keypress", (e) => { if (e.key === "Enter") startTracking(); });
-loadHistory();

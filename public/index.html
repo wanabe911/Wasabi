@@ -2,16 +2,39 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Wasabi 追跡</title>
+    
+    <meta name="description" content="Wasabi 追跡 - Phone & Email Intelligence Tracker">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Wasabi 追跡">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <link rel="manifest" href="/manifest.json">
+    
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div id="splash" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo-container">
+                <div class="slash-line left-slash"></div>
+                <img src="/icon-512.png" alt="Wasabi" class="splash-logo" id="splashLogo">
+                <div class="slash-line right-slash"></div>
+                <div class="katana-slice" id="katanaSlice"></div>
+            </div>
+            <h1 class="splash-title">Wasabi<span class="splash-jp">追跡</span></h1>
+            <p class="splash-sub">Phone & Email Intelligence</p>
+            <div class="splash-loader"></div>
+        </div>
+    </div>
+
     <div class="bg-grid"></div>
-    <div class="container">
+    <div class="container" id="mainApp" style="display:none;">
         <header>
             <div class="logo">
                 <span class="logo-icon">W</span>

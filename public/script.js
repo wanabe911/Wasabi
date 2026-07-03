@@ -1,3 +1,10 @@
+window.addEventListener("load", () => {
+    setTimeout(() => {
+        document.getElementById("mainApp").style.display = "block";
+        document.getElementById("splash").style.display = "none";
+    }, 3100);
+});
+
 const searchInput = document.getElementById("searchInput");
 const searchBtn = document.getElementById("searchBtn");
 const progress = document.getElementById("progress");

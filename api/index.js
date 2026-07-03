@@ -32,8 +32,12 @@ async function lookupAbstract(phone) {
   try {
     const res = await fetch(`https://phoneintelligence.abstractapi.com/v1/?api_key=${ABSTRACT_KEY}&phone=${phone}`);
     const data = await res.json();
-    if (data.valid) {
-      return { operator: data.carrier?.name, region: data.geolocation?.city, line_type: data.line_type };
+    if (data.phone_validation?.is_valid) {
+      return {
+        operator: data.phone_carrier?.name,
+        region: data.phone_location?.city || data.phone_location?.country_name,
+        line_type: data.phone_carrier?.line_type
+      };
     }
     return null;
   } catch { return null; }
@@ -41,10 +45,15 @@ async function lookupAbstract(phone) {
 
 async function lookupVeriphone(phone) {
   try {
-    const res = await fetch(`https://api.veriphone.io/v2/verify?key=${VERIPHONE_KEY}&phone=${phone}`);
+    const cleaned = phone.replace(/[^0-9]/g, "");
+    const res = await fetch(`https://api.veriphone.io/v2/verify?key=${VERIPHONE_KEY}&phone=%2B${cleaned}`);
     const data = await res.json();
     if (data.phone_valid) {
-      return { operator: data.carrier, region: data.phone_region, line_type: data.phone_type };
+      return {
+        operator: data.carrier,
+        region: data.phone_region || data.country,
+        line_type: data.phone_type
+      };
     }
     return null;
   } catch { return null; }

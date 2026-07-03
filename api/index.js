@@ -72,19 +72,7 @@ async function lookupIpstack(ip) {
   try {
     const res = await fetch(`http://api.ipstack.com/${ip}?access_key=${IPSTACK_KEY}`);
     const data = await res.json();
-    if (data.ip) {
-      return {
-        ip: data.ip,
-        country: data.country_name,
-        region: data.region_name,
-        city: data.city,
-        zip: data.zip,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        timezone: data.time_zone?.id,
-        isp: data.connection?.isp
-      };
-    }
+    if (data.ip) return { ip: data.ip, country: data.country_name, region: data.region_name, city: data.city, zip: data.zip, latitude: data.latitude, longitude: data.longitude, timezone: data.time_zone?.id, isp: data.connection?.isp };
     return null;
   } catch { return null; }
 }
@@ -92,15 +80,9 @@ async function lookupIpstack(ip) {
 app.post("/api/register", async (req, res) => {
   const { email, password, name, city } = req.body;
   if (!email || !password || !name || !city) return res.status(400).json({ error: "Semua field harus diisi" });
-
   const { data: exist } = await supabase.from("users").select("id").eq("email", email).single();
   if (exist) return res.status(400).json({ error: "Email sudah terdaftar" });
-
-  const { error } = await supabase.from("users").insert({
-    email, password: hash(password), name, city
-  });
-  if (error) return res.status(500).json({ error: "Gagal mendaftar" });
-
+  await supabase.from("users").insert({ email, password: hash(password), name, city });
   res.json({ success: true });
 });
 
@@ -118,13 +100,12 @@ app.get("/api/ip", async (req, res) => {
 });
 
 app.post("/api/track", async (req, res) => {
-  const { input } = req.body;
+  const { input, userEmail } = req.body;
   if (!input) return res.status(400).json({ error: "Input diperlukan" });
 
   const cleaned = input.trim();
   const isPhone = /^[0-9+\-() ]+$/.test(cleaned) && cleaned.replace(/[^0-9]/g, "").length >= 8;
   const isEmail = cleaned.includes("@") && cleaned.includes(".");
-  
   if (!isPhone && !isEmail) return res.status(400).json({ error: "Masukkan nomor HP atau email yang valid" });
 
   const result = { input, type: isPhone ? "phone" : "email", timestamp: new Date().toISOString() };
@@ -134,10 +115,7 @@ app.post("/api/track", async (req, res) => {
     result.phone_formatted = phone.startsWith("+") ? phone : "+" + phone.replace(/^\+/, "");
     const prefixData = lookupPrefix(phone);
     result.prefix = prefixData;
-
-    const [numverify, abstract, veriphone] = await Promise.all([
-      lookupNumVerify(phone), lookupAbstract(phone), lookupVeriphone(phone)
-    ]);
+    const [numverify, abstract, veriphone] = await Promise.all([lookupNumVerify(phone), lookupAbstract(phone), lookupVeriphone(phone)]);
     result.apis = { numverify, abstract, veriphone };
     result.merged = {
       operator: numverify?.operator || abstract?.operator || veriphone?.operator || prefixData.operator,
@@ -152,14 +130,10 @@ app.post("/api/track", async (req, res) => {
     result.email_domain = cleaned.split("@")[1];
   }
 
-  const { data: tracked } = await supabase.from("tracked_numbers").select("*")
-    .or(`phone.eq.${input},email.eq.${input}`).single();
-
+  const { data: tracked } = await supabase.from("tracked_numbers").select("*").or(`phone.eq.${input},email.eq.${input}`).single();
   if (tracked) {
     result.tracked = tracked;
-    await supabase.from("tracked_numbers").update({
-      searched_count: tracked.searched_count + 1, updated_at: new Date()
-    }).eq("id", tracked.id);
+    await supabase.from("tracked_numbers").update({ searched_count: tracked.searched_count + 1, updated_at: new Date(), searched_by: userEmail || null }).eq("id", tracked.id);
   }
 
   res.json({ success: true, data: result });
@@ -168,27 +142,20 @@ app.post("/api/track", async (req, res) => {
 app.post("/api/report", async (req, res) => {
   const { phone, name, labels, location, notes, risk_level, reporter_name, reporter_city } = req.body;
   if (!phone) return res.status(400).json({ error: "Nomor diperlukan" });
-
   const { data: exist } = await supabase.from("tracked_numbers").select("id").eq("phone", phone).single();
   if (exist) {
-    await supabase.from("tracked_numbers").update({
-      name, labels, location, notes, risk_level, reports: exist.reports + 1, updated_at: new Date()
-    }).eq("id", exist.id);
+    await supabase.from("tracked_numbers").update({ name, labels, location, notes, risk_level, reports: exist.reports + 1, updated_at: new Date(), added_by: reporter_name, reporter_city }).eq("id", exist.id);
   } else {
-    await supabase.from("tracked_numbers").insert({
-      phone, name, labels: labels ? labels.split(",").map(l => l.trim()) : [], location, notes, risk_level, reports: 1, added_by: reporter_name, reporter_city
-    });
+    await supabase.from("tracked_numbers").insert({ phone, name, labels: labels ? labels.split(",").map(l => l.trim()) : [], location, notes, risk_level, reports: 1, added_by: reporter_name, reporter_city });
   }
   res.json({ success: true });
 });
 
 app.get("/api/recent", async (req, res) => {
-  const { data } = await supabase.from("tracked_numbers").select("*").order("updated_at", { ascending: false }).limit(10);
+  const userEmail = req.query.userEmail || "";
+  const { data } = await supabase.from("tracked_numbers").select("*").or(`searched_by.eq.${userEmail},added_by.eq.${userEmail}`).order("updated_at", { ascending: false }).limit(20);
   res.json({ success: true, data });
 });
 
-app.get("/", (req, res) => {
-  res.sendFile("public/index.html", { root: "." });
-});
-
+app.get("/", (req, res) => res.sendFile("public/index.html", { root: "." }));
 export default app;

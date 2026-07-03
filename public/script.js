@@ -48,16 +48,13 @@ async function loadIP() {
 
 async function loadStats() {
     try {
-        const res = await fetch("/api/recent");
+        const res = await fetch(`/api/recent?userEmail=${encodeURIComponent(user.email)}`);
         const json = await res.json();
         if (json.success && json.data) {
             document.getElementById("statTotal").textContent = json.data.length || 0;
             const highRisk = json.data.filter(d => d.risk_level === "TINGGI").length;
             document.getElementById("statHighRisk").textContent = highRisk;
-            const today = json.data.filter(d => {
-                const dDate = new Date(d.updated_at).toDateString();
-                return dDate === new Date().toDateString();
-            }).length;
+            const today = json.data.filter(d => new Date(d.updated_at).toDateString() === new Date().toDateString()).length;
             document.getElementById("statToday").textContent = today;
         }
     } catch {}
@@ -82,7 +79,11 @@ async function startTracking() {
     let step = 0;
     const si = setInterval(() => { if (step < STEPS.length) { progressText.textContent = STEPS[step]; step++; } }, 350);
     try {
-        const res = await fetch("/api/track", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ input }) });
+        const res = await fetch("/api/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ input, userEmail: user.email })
+        });
         const json = await res.json();
         clearInterval(si);
         if (json.success) { displayResult(json.data); } else { displayError(json.error); }
@@ -97,7 +98,6 @@ function displayResult(data) {
     html += '</div><div class="result-body">';
     html += `<div class="result-row"><span class="result-label">Input</span><span class="result-value">${escapeHtml(data.input)}</span></div>`;
     html += `<div class="result-row"><span class="result-label">Tipe</span><span class="result-value">${data.type === 'phone' ? 'Nomor Telepon' : 'Email'}</span></div>`;
-
     if (data.type === "phone") {
         currentPhone = data.phone_formatted || data.input;
         html += `<div class="result-row"><span class="result-label">Format</span><span class="result-value">${data.phone_formatted}</span></div>`;
@@ -115,7 +115,6 @@ function displayResult(data) {
     } else {
         html += `<div class="result-row"><span class="result-label">Domain</span><span class="result-value">${data.email_domain}</span></div>`;
     }
-
     if (data.tracked) {
         html += '<div class="result-section"><h3>Data Laporan</h3>';
         html += `<div class="result-row"><span class="result-label">Nama</span><span class="result-value highlight">${escapeHtml(data.tracked.name || '-')}</span></div>`;
@@ -125,12 +124,10 @@ function displayResult(data) {
         html += `<div class="result-row"><span class="result-label">Catatan</span><span class="result-value">${escapeHtml(data.tracked.notes || '-')}</span></div>`;
         html += '</div>';
     }
-
     html += '<button class="copy-btn" onclick="copyResult()">Copy Hasil</button>';
     html += '</div>';
     result.innerHTML = html;
     result.classList.remove("hidden");
-
     if (data.type === "phone") {
         document.getElementById("reportName").value = data.tracked?.name || "";
         document.getElementById("reportLabels").value = data.tracked?.labels?.join(", ") || "";
@@ -152,15 +149,8 @@ function displayError(msg) {
 }
 
 async function copyResult() {
-    const text = Array.from(result.querySelectorAll(".result-row"))
-        .map(r => r.querySelector(".result-label").textContent + ": " + r.querySelector(".result-value").textContent)
-        .join("\n");
-    try {
-        await navigator.clipboard.writeText(text);
-        alert("Hasil disalin!");
-    } catch {
-        alert("Gagal menyalin");
-    }
+    const text = Array.from(result.querySelectorAll(".result-row")).map(r => r.querySelector(".result-label").textContent + ": " + r.querySelector(".result-value").textContent).join("\n");
+    try { await navigator.clipboard.writeText(text); alert("Hasil disalin!"); } catch { alert("Gagal menyalin"); }
 }
 
 async function submitReport() {
@@ -184,7 +174,7 @@ async function submitReport() {
 
 async function loadHistory() {
     try {
-        const res = await fetch("/api/recent");
+        const res = await fetch(`/api/recent?userEmail=${encodeURIComponent(user.email)}`);
         const json = await res.json();
         if (json.success && json.data?.length > 0) {
             history.classList.remove("hidden");
@@ -199,16 +189,13 @@ async function loadHistory() {
 }
 
 function exportCSV() {
-    fetch("/api/recent").then(r => r.json()).then(json => {
+    fetch(`/api/recent?userEmail=${encodeURIComponent(user.email)}`).then(r => r.json()).then(json => {
         if (!json.success || !json.data?.length) return alert("Tidak ada data");
         let csv = "Phone,Email,Nama,Label,Lokasi,Laporan,Risk Level,Catatan\n";
-        json.data.forEach(d => {
-            csv += `${d.phone || ""},${d.email || ""},"${d.name || ""}","${(d.labels || []).join("; ")}","${d.location || ""}",${d.reports || 0},${d.risk_level || ""},"${d.notes || ""}"\n`;
-        });
+        json.data.forEach(d => { csv += `${d.phone||""},${d.email||""},"${d.name||""}","${(d.labels||[]).join("; ")}","${d.location||""}",${d.reports||0},${d.risk_level||""},"${d.notes||""}"\n`; });
         const blob = new Blob([csv], { type: "text/csv" });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = `wasabi-export-${new Date().toISOString().slice(0,10)}.csv`;
+        const a = document.createElement("a"); a.href = url; a.download = `wasabi-export-${new Date().toISOString().slice(0,10)}.csv`;
         a.click(); URL.revokeObjectURL(url);
     });
 }
